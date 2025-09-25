@@ -1,3 +1,4 @@
 venv
 *.duckdb
-task.md
+__pycache__/
+output/

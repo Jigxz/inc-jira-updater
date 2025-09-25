@@ -13,16 +13,20 @@ An intelligent application that automatically analyzes Jira issues and adds comp
 - **⚙️ Configurable Thresholds**: Adjust similarity thresholds for different use cases
 - **🛡️ Robust Error Handling**: Comprehensive error handling and logging
 - **🧪 Comprehensive Testing**: Full test suite included
+- **📊 Excel to Database Processing**: Automatically processes Excel files and stores data in vector format
+- **🔄 Duplicate Prevention**: Checks existing records and skips duplicates during data import
+- **📋 JSON Export**: Converts Excel data to JSON format for easy integration
 
 ## 🏗️ Architecture
 
 The application consists of several key components:
 
 1. **Data Processing** (`file_scraper.py`): Scrapes XLS incident data and stores in DuckDB with vector embeddings
-2. **Core Engine** (`jira_updater_enhanced.py`): Main analysis and Jira integration logic using Atlassian Python API
-3. **Configuration** (`config.py`): Centralized configuration management
-4. **Web Interface** (`web_interface.py`): Flask-based web application
-5. **Testing** (`test_jira_updater.py`): Comprehensive test suite
+2. **Excel to Database Processor** (`excel_to_db_processor.py`): Processes Excel files and stores data in vector format with duplicate checking
+3. **Core Engine** (`jira_updater_enhanced.py`): Main analysis and Jira integration logic using Atlassian Python API
+4. **Configuration** (`config.py`): Centralized configuration management
+5. **Web Interface** (`web_interface.py`): Flask-based web interface for easy operation
+6. **Testing** (`test_jira_updater.py`): Comprehensive test suite
 
 ## 📋 Prerequisites
 
@@ -247,6 +251,109 @@ comment = updater.generate_analysis_comment("UI issue", similar_incidents, analy
 success = updater.update_jira_comment("PROJ-123", comment)
 ```
 
+## 📊 Excel to Database Processing
+
+### Overview
+The Excel to Database processor (`excel_to_db_processor.py`) is a powerful utility that automatically processes Excel files containing incident data and stores them in DuckDB with vector embeddings. It includes intelligent duplicate detection and prevention.
+
+### Key Features
+- **🔄 Automatic Duplicate Detection**: Checks existing INC numbers before insertion
+- **🗂️ Vector Embedding Generation**: Creates semantic embeddings for incident descriptions
+- **📋 Individual JSON Files**: Creates separate JSON files for each INC record
+- **🔗 Database-JSON Linking**: Each database record links to its corresponding JSON file
+- **⚡ Batch Processing**: Processes large datasets efficiently in batches
+- **🛡️ Error Handling**: Comprehensive error handling and logging
+- **📊 Progress Tracking**: Real-time progress updates during processing
+
+### Usage
+
+#### Command Line
+```bash
+# Basic usage - processes input/INC.xlsx and creates output/json_records/ directory
+python excel_to_db_processor.py
+
+# Custom file paths
+python -c "
+from excel_to_db_processor import ExcelToDBProcessor
+processor = ExcelToDBProcessor()
+processor.process_excel_to_db('path/to/your/file.xlsx', 'path/to/json_records')
+"
+```
+
+#### Python API
+```python
+from excel_to_db_processor import ExcelToDBProcessor
+
+# Initialize processor
+processor = ExcelToDBProcessor()
+
+# Process Excel file
+processor.process_excel_to_db(
+    excel_path="input/INC.xlsx",
+    json_dir="output/json_records"
+)
+
+# Close connection
+processor.close_connection()
+```
+
+### Expected Excel Format
+The Excel file should contain the following columns:
+- **INC**: Incident number (unique identifier)
+- **Short Desc**: Brief description of the incident
+- **Created Date**: When the incident was created
+- **Updated Date**: When the incident was last updated
+- **Assignee**: Person assigned to the incident
+- **Group**: Team or group responsible
+- **Created By**: Person who created the incident
+- **Updated By **: Person who last updated the incident
+
+### Processing Flow
+1. **File Reading**: Reads Excel file using pandas
+2. **JSON Export**: Converts DataFrame to JSON format
+3. **Duplicate Check**: Queries database for existing INC numbers
+4. **Embedding Generation**: Creates vector embeddings for descriptions
+5. **Batch Insertion**: Inserts new records in batches of 100
+6. **Progress Reporting**: Provides detailed progress updates
+
+### Output Files
+- **JSON File**: Human-readable format for data integration
+- **Database Records**: Vector embeddings stored in DuckDB for similarity search
+
+### Example Output
+```
+🚀 Starting Excel to Database processing...
+📁 Excel file: input/INC.xlsx
+✅ Successfully read Excel file with 150 rows
+✅ JSON file created: output/incidents.json
+✅ Found 45 existing incidents in database
+⏭️  Skipping existing INC: 1232321
+⏭️  Skipping existing INC: 1232325
+✅ Prepared 105 new incidents for insertion
+✅ Inserted batch 1: 100 incidents
+✅ Inserted batch 2: 5 incidents
+✅ Successfully inserted 105 new incidents into database
+✅ Excel to Database processing completed successfully!
+
+📊 Summary:
+   • Total rows in Excel: 150
+   • Existing incidents in DB: 45
+   • New incidents added: 105
+```
+
+### Error Handling
+The processor handles various error scenarios:
+- **Missing Files**: Clear error messages for missing Excel files
+- **Invalid Data**: Skips rows with missing or invalid INC numbers
+- **Database Errors**: Comprehensive database connection error handling
+- **Embedding Errors**: Graceful handling of text embedding failures
+
+### Performance Considerations
+- **Memory Usage**: Processes data in batches to manage memory efficiently
+- **Database Optimization**: Uses prepared statements for fast insertions
+- **Vector Generation**: Leverages GPU acceleration when available
+- **Progress Updates**: Real-time feedback for long-running operations
+
 ## 📊 How It Works
 
 ### 1. Incident Matching Process
@@ -393,9 +500,18 @@ jira-comment-updater/
 ├── 📄 jira_updater_enhanced.py     # Main application
 ├── 📄 web_interface.py             # Flask web interface
 ├── 📄 test_jira_updater.py         # Test suite
+├── 📄 excel_to_db_processor.py     # Excel to database processor
 ├── 📄 file_scraper.py              # Data processing utilities
 ├── 📄 INC.xlsx                     # Incident data file
 ├── 📄 local_vector_db.duckdb       # Vector database
+├── 📁 input/                       # Input files directory
+│   └── 📄 INC.xlsx                 # Excel incident data file
+├── 📁 output/                      # Output files directory
+│   ├── 📄 incidents.json           # Legacy combined JSON data
+│   └── 📁 json_records/            # Individual JSON files per INC
+│       ├── 📄 1232321.json         # Individual INC record
+│       ├── 📄 1232325.json         # Individual INC record
+│       └── 📄 ...                 # More individual records
 ├── 📁 templates/
 │   └── 📄 index.html               # Web interface template
 └── 📄 sample_comment.txt           # Example generated comment
