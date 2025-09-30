@@ -1,5 +1,4 @@
 import pandas as pd
-from sentence_transformers import SentenceTransformer
 import duckdb
 import numpy as np
 import json
@@ -7,11 +6,14 @@ from typing import List, Dict, Set
 import os
 from datetime import datetime
 from config import Config
+import google.generativeai as genai
 
 class ExcelToDBProcessor:
     def __init__(self):
         self.db_file = Config.DB_FILE
-        self.model = SentenceTransformer('all-MiniLM-L6-v2')
+        # Initialize Gemini AI
+        genai.configure(api_key=Config.GEMINI_API_KEY)
+        self.model = genai.embed_content(model="models/embedding-001", task_type="retrieval_document")
         self.con = None
         self.setup_database()
 
@@ -114,10 +116,14 @@ class ExcelToDBProcessor:
             return set()
 
     def generate_embedding(self, text: str) -> List[float]:
-        """Generate vector embedding for text"""
+        """Generate vector embedding for text using Gemini"""
         try:
-            embedding = self.model.encode([text])[0]
-            return embedding.tolist()
+            result = genai.embed_content(
+                model="models/embedding-001",
+                content=text,
+                task_type="retrieval_document"
+            )
+            return result['embedding']
 
         except Exception as e:
             print(f"❌ Error generating embedding: {e}")

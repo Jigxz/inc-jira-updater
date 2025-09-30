@@ -27,6 +27,9 @@ class Config:
     LLM_MODEL = "gpt-3.5-turbo"
     LLM_MAX_TOKENS = 1000
 
+    # Gemini AI Configuration (for embeddings)
+    GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")  # Set your Gemini API key as environment variable
+
     # File Paths
     EXCEL_FILE_PATH = "INC.xlsx"
 

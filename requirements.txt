@@ -1,5 +1,4 @@
 pandas
-sentence-transformers
 openpyxl
 duckdb
 numpy
@@ -8,3 +7,4 @@ flask
 openai
 python-dotenv
 atlassian-python-api
+google-generativeai
